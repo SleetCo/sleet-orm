@@ -48,7 +48,7 @@ git clone https://github.com/SleetCo/sleet-orm [sleet]/sleet
 
 ```cfg
 ensure oxmysql
-ensure ensure your_sleet_user_resource
+ensure your_sleet_user_resource
 ```
 
 ### 3. Your resource's fxmanifest.lua
