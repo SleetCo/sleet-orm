@@ -19,6 +19,8 @@ local players = db.select()
 -- players: PlayersRecord[]  ✓（LuaLS 自动推断）
 ```
 
+> QQ 交流群: 914053352
+
 ---
 
 ## 特性
