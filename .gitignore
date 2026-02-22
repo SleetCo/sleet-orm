@@ -1,0 +1,9 @@
+# Go build artifacts
+cli/sleet
+cli/sleet.exe
+cli/*.exe
+cli
+
+# IDE auto-generated type annotations
+.sleet/
+**/.sleet/
