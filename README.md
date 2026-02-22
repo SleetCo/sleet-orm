@@ -280,7 +280,7 @@ Single self-contained binary written in Go — no Node, no Python, no runtime.
 npm install -g sleet-orm-cli
 ```
 
-**Download a pre-built binary** from [GitHub Releases](https://github.com/SleetCo/sleet-orm/releases):
+**Download a pre-built binary** from [GitHub Releases](https://github.com/SleetCo/sleet-orm-cli/releases):
 
 | Platform    | File           |
 | ----------- | -------------- |

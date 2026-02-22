@@ -282,7 +282,7 @@ sl.not_(cond)                -- NOT (cond)
 npm install -g sleet-orm-cli
 ```
 
-**下载预构建二进制**（[GitHub Releases](https://github.com/SleetCo/sleet-orm/releases)）：
+**下载预构建二进制**（[GitHub Releases](https://github.com/SleetCo/sleet-orm-cli/releases)）：
 
 | 平台        | 文件           |
 | ----------- | -------------- |
