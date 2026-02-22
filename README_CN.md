@@ -284,11 +284,9 @@ npm install -g sleet-orm-cli
 
 **下载预构建二进制**（[GitHub Releases](https://github.com/SleetCo/sleet-orm-cli/releases)）：
 
-| 平台        | 文件           |
-| ----------- | -------------- |
-| Windows x64 | `sleet.exe`    |
-| Linux x64   | `sleet`        |
-| macOS x64   | `sleet-darwin` |
+| 平台        | 文件        |
+| ----------- | ----------- |
+| Windows x64 | `sleet.exe` |
 
 放入 `PATH` 或直接在项目根目录调用。
 

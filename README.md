@@ -282,11 +282,9 @@ npm install -g sleet-orm-cli
 
 **Download a pre-built binary** from [GitHub Releases](https://github.com/SleetCo/sleet-orm-cli/releases):
 
-| Platform    | File           |
-| ----------- | -------------- |
-| Windows x64 | `sleet.exe`    |
-| Linux x64   | `sleet`        |
-| macOS x64   | `sleet-darwin` |
+| Platform    | File        |
+| ----------- | ----------- |
+| Windows x64 | `sleet.exe` |
 
 Place it on your `PATH` (or run it directly from your project root).
 
