@@ -143,8 +143,17 @@ function M.buildUpdate(b)
     local sets = {}
 
     for k, v in pairs(b._set) do
-        table.insert(sets, q(k) .. ' = ?')
-        table.insert(params, v)
+        if raw.isRaw(v) then
+            table.insert(sets, q(k) .. ' = ' .. v._fragment)
+            if v._params then
+                for _, p in ipairs(v._params) do
+                    table.insert(params, p)
+                end
+            end
+        else
+            table.insert(sets, q(k) .. ' = ?')
+            table.insert(params, v)
+        end
     end
 
     local sql = 'UPDATE ' .. q(b._table._tableName) .. ' SET ' .. table.concat(sets, ', ')
