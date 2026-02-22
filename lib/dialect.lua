@@ -27,7 +27,12 @@ local function buildCond(cond, params)
     local kind = cond._kind
 
     if kind == 'op' then
-        table.insert(params, cond._val)
+        -- 列对列比较: _val 为列定义时用 colRef, 否则作为参数
+        local val = cond._val
+        if val and type(val) == 'table' and val._tableName and val._name then
+            return colRef(cond._col) .. ' ' .. cond._op .. ' ' .. colRef(val)
+        end
+        table.insert(params, val)
         return colRef(cond._col) .. ' ' .. cond._op .. ' ?'
 
     elseif kind == 'is_null' then
