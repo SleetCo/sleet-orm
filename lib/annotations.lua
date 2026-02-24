@@ -71,6 +71,7 @@
 
 ---@class SleetDeleteBuilder
 ---@field where   fun(cond: table): SleetDeleteBuilder
+---@field all     fun(): SleetDeleteBuilder
 ---@field execute fun(): integer
 ---@field toSQL   fun(): string, table
 

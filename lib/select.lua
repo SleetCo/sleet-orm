@@ -66,12 +66,14 @@ end
 
 ---执行查询，返回结果数组
 function SelectBuilder:execute()
+    assert(self._from, '[Sleet] select():from() must be called')
     local sql, params = dialect.buildSelect(self)
     return MySQL.query.await(sql, params)
 end
 
 ---返回 SQL 字符串及参数
 function SelectBuilder:toSQL()
+    assert(self._from, '[Sleet] select():from() must be called')
     return dialect.buildSelect(self)
 end
 

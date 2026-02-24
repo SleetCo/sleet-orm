@@ -9,15 +9,23 @@ end
 
 -- 将列定义或 RawSQL 转换为 SQL 片段
 local function colRef(col)
-    if raw.isRaw(col) then
-        return col._fragment
+    if raw.isRaw(col) then return col._fragment end
+    if type(col) == 'table' then
+        if col._tableName and col._name then
+            return q(col._tableName) .. '.' .. q(col._name)
+        elseif col._name then
+            return q(col._name)
+        end
     end
-    if col._tableName and col._name then
-        return q(col._tableName) .. '.' .. q(col._name)
-    elseif col._name then
-        return q(col._name)
-    end
-    return tostring(col)
+    -- 兜底：作为标识符处理并转义，防止直接拼接恶意 SQL
+    return q(col) 
+end
+
+local function getSortedKeys(t)
+    local keys = {}
+    for k in pairs(t) do table.insert(keys, k) end
+    table.sort(keys)
+    return keys
 end
 
 -- 递归构建 WHERE 条件, 参数追加到 params 表
@@ -128,18 +136,40 @@ end
 
 function M.buildInsert(b)
     local params = {}
-    local cols, ph = {}, {}
-
-    for k, v in pairs(b._values) do
-        table.insert(cols, q(k))
-        table.insert(ph,   '?')
-        table.insert(params, v)
-    end
 
     local sql = 'INSERT INTO ' .. q(b._table._tableName)
-        .. ' (' .. table.concat(cols, ', ') .. ')'
-        .. ' VALUES (' .. table.concat(ph, ', ') .. ')'
+    local isBatch = b._values[1] ~= nil and type(b._values[1]) == 'table'
+    local rows = isBatch and b._values or { b._values }
 
+    local keys = getSortedKeys(rows[1])
+    local cols = {}
+    for _, k in ipairs(keys) do table.insert(cols, q(k)) end
+
+    local allValuePlaceholders = {}
+    for _, row in ipairs(rows) do
+        local ph = {}
+        for _, k in ipairs(keys) do
+            table.insert(ph, '?')
+            table.insert(params, row[k])
+        end
+        table.insert(allValuePlaceholders, '(' .. table.concat(ph, ', ') .. ')')
+    end
+
+    -- local cols, ph = {}, {}
+
+    -- local keys = getSortedKeys(b._values)
+    -- for _, k in ipairs(keys) do
+    --     local v = b._values[k]
+    --     table.insert(cols, q(k))
+    --     table.insert(ph,   '?')
+    --     table.insert(params, v)
+    -- end
+
+    -- local sql = 'INSERT INTO ' .. q(b._table._tableName)
+    --     .. ' (' .. table.concat(cols, ', ') .. ')'
+    --     .. ' VALUES (' .. table.concat(ph, ', ') .. ')'
+
+    sql = sql .. ' (' .. table.concat(cols, ', ') .. ') VALUES ' .. table.concat(allValuePlaceholders, ', ')
     return sql, params
 end
 
@@ -147,7 +177,9 @@ function M.buildUpdate(b)
     local params = {}
     local sets = {}
 
-    for k, v in pairs(b._set) do
+    local keys = getSortedKeys(b._set)
+    for _, k in ipairs(keys) do
+        local v = b._set[k]
         if raw.isRaw(v) then
             table.insert(sets, q(k) .. ' = ' .. v._fragment)
             if v._params then

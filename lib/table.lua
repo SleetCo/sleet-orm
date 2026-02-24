@@ -18,11 +18,15 @@ function M.define(name, columns)
 
     for colName, colDef in pairs(columns) do
         if schema.isColumn(colDef) then
-            colDef._name      = colName
-            colDef._tableName = name
+            local clonedCol = {}
+            for k, v in pairs(colDef) do clonedCol[k] = v end
+            setmetatable(clonedCol, getmetatable(colDef))
 
-            tbl[colName] = colDef
-            table.insert(tbl._columns, { name = colName, def = colDef })
+            clonedCol._name      = colName
+            clonedCol._tableName = name
+
+            tbl[colName] = clonedCol
+            table.insert(tbl._columns, { name = colName, def = clonedCol })
         end
     end
 

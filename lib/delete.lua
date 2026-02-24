@@ -9,8 +9,17 @@ function DeleteBuilder:where(cond)
     return self
 end
 
+-- 允许没有where的删除
+function DeleteBuilder:all()
+    self._allowAll = true
+    return self
+end
+
 ---执行删除, 返回受影响行数
 function DeleteBuilder:execute()
+    if not self._where and not self._allowAll then
+        error("[Sleet] Dangerous Operation: delete() without where() is blocked. Use all() to confirm.")
+    end
     local sql, params = dialect.buildDelete(self)
     return MySQL.update.await(sql, params)
 end
