@@ -55,6 +55,11 @@ function Column.references(self, col)
     return self
 end
 
+function Column.softDelete(self)
+    self._isSoftDelete = true
+    return self
+end
+
 ---@param text string 列的描述文字: 传播到生成的 types.lua 注释和 SQL COMMENT
 function Column.comment(self, text)
     self._comment = text

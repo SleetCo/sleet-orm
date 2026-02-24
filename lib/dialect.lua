@@ -101,8 +101,19 @@ local function selectCols(cols)
     return table.concat(parts, ', ')
 end
 
+-- TODO: 获取软删除字段
+local function getSoftDeleteColumn(tbl)
+    for colName, colDef in pairs(tbl) do
+        if type(colDef) == 'table' and colDef._isSoftDelete then
+            return colName
+        end
+    end
+    return nil
+end
+
 function M.buildSelect(b)
     local params = {}
+
     local sql = 'SELECT ' .. selectCols(b._cols)
 
     sql = sql .. ' FROM ' .. q(b._from._tableName)
@@ -111,6 +122,17 @@ function M.buildSelect(b)
         for _, j in ipairs(b._joins) do
             local onSql = buildCond(j.on, params)
             sql = sql .. ' ' .. j.type .. ' JOIN ' .. q(j.tbl._tableName) .. ' ON ' .. onSql
+        end
+    end
+
+    local sdColName = getSoftDeleteColumn(b._from)
+    if sdColName and not b._withDeleted then
+        local sdCond = { _kind = 'is_null', _col = b._from[sdColName] }
+        if b._where then
+            -- merge 原有条件
+            b._where = { _kind = 'and', _conditions = { b._where, sdCond } }
+        else
+            b._where = sdCond
         end
     end
 
@@ -204,6 +226,14 @@ function M.buildUpdate(b)
 end
 
 function M.buildDelete(b)
+    local sdColName = getSoftDeleteColumn(b._table)
+
+    -- 如果包含软删除字段, 拦截走 UPDATE
+    if sdColName then
+        b._set = { [sdColName] = raw.sql('NOW()') }
+        return M.buildUpdate(b)
+    end
+
     local params = {}
     local sql = 'DELETE FROM ' .. q(b._table._tableName)
 

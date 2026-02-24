@@ -64,6 +64,11 @@ function SelectBuilder:rightJoin(tbl, on)
     return self
 end
 
+function SelectBuilder:withDeleted()
+    self._withDeleted = true
+    return self
+end
+
 ---执行查询，返回结果数组
 function SelectBuilder:execute()
     assert(self._from, '[Sleet] select():from() must be called')
