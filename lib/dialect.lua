@@ -199,6 +199,12 @@ function M.buildUpdate(b)
     local params = {}
     local sets = {}
 
+    for k, col in pairs(b._table) do
+        if type(col) == 'table' and col._onUpdate ~= nil and b._set[k] == nil then
+            b._set[k] = col._onUpdate
+        end
+    end
+
     local keys = getSortedKeys(b._set)
     for _, k in ipairs(keys) do
         local v = b._set[k]

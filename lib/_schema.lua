@@ -55,6 +55,12 @@ function Column.references(self, col)
     return self
 end
 
+---@param val string|number|table 当字段更新时的值 (支持 col.sql('NOW()') )
+function Column.onUpdate(self, val)
+    self._onUpdate = val
+    return self
+end
+
 function Column.softDelete(self)
     self._isSoftDelete = true
     return self
