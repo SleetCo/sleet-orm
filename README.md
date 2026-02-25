@@ -468,6 +468,115 @@ _inside LuaLS only_ (your actual files are untouched) to stabilize these types.
 
 ---
 
+## Advanced Features
+
+### Soft Delete
+
+Soft delete automatically converts `DELETE` operations into `UPDATE` operations that set a timestamp field instead of physically removing rows.
+
+#### Schema Definition
+
+```lua
+local players = sl.table('players', {
+    id         = sl.serial().primaryKey(),
+    identifier = sl.varchar(64).notNull().unique(),
+    name       = sl.varchar(255).notNull(),
+    deleted_at = sl.timestamp().softDelete().comment('Soft delete timestamp'),
+    -- ... other fields
+})
+```
+
+#### Usage
+
+```lua
+-- This DELETE is automatically converted to UPDATE SET deleted_at = NOW()
+db.delete(s.players)
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+
+-- Query only non-deleted records (automatically filters deleted_at IS NULL)
+local activePlayers = db.select()
+    .from(s.players)
+    .execute()  -- Only returns rows where deleted_at IS NULL
+
+-- Query deleted records explicitly
+local deletedPlayers = db.select()
+    .from(s.players)
+    .where(sl.isNotNull(s.players.deleted_at))
+    .execute()
+
+-- Restore a soft-deleted record
+db.update(s.players)
+    .set({ deleted_at = sl.sql('NULL') })
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+
+-- Force delete (bypass soft delete, physically remove)
+db.delete(s.players)
+    .where(sl.eq(s.players.id, playerId))
+    .force()  -- Add .force() to bypass soft delete
+    .execute()
+```
+
+### onUpdate Fields
+
+The `onUpdate` modifier automatically updates field values during `UPDATE` operations through Lua business logic (not SQL `ON UPDATE` clauses).
+
+#### Schema Definition
+
+```lua
+local players = sl.table('players', {
+    id        = sl.serial().primaryKey(),
+    name      = sl.varchar(255).notNull(),
+    last_seen = sl.timestamp().defaultNow().onUpdate(sl.sql('NOW()')).comment('Auto-updated on every change'),
+    -- ... other fields
+})
+```
+
+#### Usage
+
+```lua
+-- Any UPDATE operation automatically updates onUpdate fields
+db.update(s.players)
+    .set({ name = 'New Name' })
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+-- last_seen is automatically updated to NOW() via Sleet's Lua layer
+
+-- onUpdate fields work with all UPDATE patterns
+db.update(s.players)
+    .set({ money = sl.sql('`money` + ?', { 100 }) })
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+-- last_seen still gets updated automatically
+```
+
+#### Advanced onUpdate Examples
+
+```lua
+-- Static value
+updated_by = sl.varchar(64).onUpdate('system'),
+
+-- Dynamic expression
+version = sl.int().default(1).onUpdate(sl.sql('`version` + 1')),
+
+-- Complex timestamp
+last_modified = sl.timestamp().onUpdate(sl.sql('CURRENT_TIMESTAMP')),
+```
+
+### Combining Features
+
+```lua
+local audit_table = sl.table('user_actions', {
+    id          = sl.serial().primaryKey(),
+    user_id     = sl.int().notNull(),
+    action      = sl.varchar(100).notNull(),
+    created_at  = sl.timestamp().defaultNow(),
+    updated_at  = sl.timestamp().defaultNow().onUpdate(sl.sql('NOW()')),
+    deleted_at  = sl.timestamp().softDelete(),
+})
+```
+
 ## Contributing
 
 Sleet is open source and community-driven.

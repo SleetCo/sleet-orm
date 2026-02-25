@@ -160,6 +160,8 @@ sl.int().default(0)                    -- DEFAULT 0
 sl.timestamp().defaultNow()            -- DEFAULT CURRENT_TIMESTAMP
 sl.int().autoIncrement()               -- AUTO_INCREMENT
 sl.int().references(other.id)          -- 外键（CLI 使用）
+sl.timestamp().softDelete()            -- 软删除字段标记
+sl.timestamp().onUpdate(sl.sql('NOW()')) -- 更新时自动设置值
 sl.varchar(64).comment('描述')         -- IDE hover + SQL COMMENT
 ```
 
@@ -241,6 +243,89 @@ local sql, params = db.select()
 -- sql    = "SELECT * FROM `players` WHERE `players`.`id` = ?"
 -- params = { 1 }
 print(sql, json.encode(params))
+```
+
+---
+
+## 高级功能
+
+### 软删除 (Soft Delete)
+
+Sleet 支持自动软删除功能。当你标记一个字段为软删除字段时，所有的 DELETE 操作会自动转换为 UPDATE 操作，设置删除时间戳而不是真正删除数据。
+
+#### 定义软删除字段
+
+```lua
+local players = sl.table('players', {
+    id         = sl.serial().primaryKey(),
+    name       = sl.varchar(255).notNull(),
+    deleted_at = sl.timestamp().softDelete().comment('软删除时间戳'),
+})
+```
+
+#### 使用软删除
+
+```lua
+-- 删除操作（实际执行 UPDATE deleted_at = NOW()）
+db.delete(s.players)
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+
+-- 查询时自动过滤已删除记录
+local activePlayers = db.select().from(s.players).execute()  -- 只返回未删除的
+
+-- 查询包含已删除记录
+local allPlayers = db.select().from(s.players).withDeleted().execute()  -- 包含已删除的
+
+-- 恢复已删除记录
+db.update(s.players)
+    .set({ deleted_at = nil })
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+```
+
+### onUpdate 自动更新
+
+`onUpdate` 功能允许字段在每次 UPDATE 操作时自动设置为指定值，常用于 `last_modified` 时间戳字段。
+
+#### 定义 onUpdate 字段
+
+```lua
+local players = sl.table('players', {
+    id         = sl.serial().primaryKey(),
+    name       = sl.varchar(255).notNull(),
+    last_seen  = sl.timestamp().defaultNow().onUpdate(sl.sql('NOW()')).comment('最后活动时间'),
+})
+```
+
+#### onUpdate 自动触发
+
+```lua
+-- 任何 UPDATE 操作都会自动更新 last_seen 字段
+db.update(s.players)
+    .set({ name = 'New Name' })
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+-- last_seen 会自动设置为当前时间
+
+-- 也可以显式触发 onUpdate（不修改其他字段）
+db.update(s.players)
+    .set({ name = sl.sql('`name`') })  -- 用原值更新，仅触发 onUpdate
+    .where(sl.eq(s.players.id, playerId))
+    .execute()
+```
+
+#### 支持的 onUpdate 值类型
+
+```lua
+-- 原始 SQL 表达式（推荐）
+.onUpdate(sl.sql('NOW()'))                    -- 当前时间戳
+.onUpdate(sl.sql('UNIX_TIMESTAMP()'))         -- Unix 时间戳
+.onUpdate(sl.sql('`version` + 1'))            -- 版本号自增
+
+-- 静态值
+.onUpdate('2024-01-01 00:00:00')              -- 固定时间
+.onUpdate(1)                                  -- 固定数值
 ```
 
 ---
