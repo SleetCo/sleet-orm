@@ -281,7 +281,7 @@ local allPlayers = db.select().from(s.players).withDeleted().execute()  -- 包�
 
 -- 恢复已删除记录
 db.update(s.players)
-    .set({ deleted_at = nil })
+    .set({ deleted_at = sl.sql('NULL') })
     .where(sl.eq(s.players.id, playerId))
     .execute()
 ```

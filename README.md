@@ -501,9 +501,10 @@ local activePlayers = db.select()
     .from(s.players)
     .execute()  -- Only returns rows where deleted_at IS NULL
 
--- Query deleted records explicitly
+-- Query deleted records explicitly (use withDeleted() first, then filter)
 local deletedPlayers = db.select()
     .from(s.players)
+    .withDeleted()
     .where(sl.isNotNull(s.players.deleted_at))
     .execute()
 
@@ -511,12 +512,6 @@ local deletedPlayers = db.select()
 db.update(s.players)
     .set({ deleted_at = sl.sql('NULL') })
     .where(sl.eq(s.players.id, playerId))
-    .execute()
-
--- Force delete (bypass soft delete, physically remove)
-db.delete(s.players)
-    .where(sl.eq(s.players.id, playerId))
-    .force()  -- Add .force() to bypass soft delete
     .execute()
 ```
 
